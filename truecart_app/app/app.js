@@ -1,12 +1,12 @@
 let glob = require('glob');
 let bodyParser = require('body-parser');
-let hbs = require('express-handlebars');
+let expressHbs = require('express-handlebars');
 let db = require('./db');
 
 module.exports = (app) => {
 
-	app.engine('hbs', hbs({ extname: 'hbs', defaultLayout: 'layout', layoutsDir: __dirname + '/views/layouts' }));
-	app.set('view engine', 'hbs');
+	app.engine('.hbs', expressHbs({ defaultLayout: __dirname + '/views/layouts/layout', partialsDir: __dirname + '/views/partials', extname: '.hbs' }));
+	app.set('view engine', '.hbs');
 
 	// middleware
 	app.use(bodyParser.json());
