@@ -32,6 +32,7 @@ router.get('/user/profile', isLoggedIn, (req,res,next) => {
 
 router.get('/user/logout', (req,res,next) => {
 	req.logout();
+	req.session.cart = null;
 	res.redirect('/');
 });
 
@@ -43,6 +44,7 @@ router.get('/', (req,res,next) => {
 
 	let Product = mongoose.model('Product');
 	let successMsg = req.flash('success')[0];
+	let cartMsg = req.flash('cart')[0];
 	Product.find({}, (err, products) => {
 		if(err) throw err;
 		let productChunks = [];
@@ -50,7 +52,7 @@ router.get('/', (req,res,next) => {
 		for(let i=0;i<products.length;i+=chunkSize){
 			productChunks.push(products.slice(i, i+chunkSize));
 		}
-		res.render(path.join( __dirname, '/../views/shop/index'), { title: 'TrueCart', products: productChunks, successMsg: successMsg, noMessages: !successMsg });
+		res.render(path.join( __dirname, '/../views/shop/index'), { title: 'TrueCart', products: productChunks, successMsg: successMsg, noMessages: !successMsg, cartMsg: cartMsg, noCartMsg: !cartMsg });
 	});
 
 });
@@ -66,6 +68,7 @@ router.get('/add-to-cart/:id', (req,res,next) => {
 			return res.redirect('/');
 		}
 		cart.add(product, product.id);
+		req.flash('cart', 'Cart item added!');
 		req.session.cart = cart;
 		res.redirect('/');
 	});
@@ -73,7 +76,7 @@ router.get('/add-to-cart/:id', (req,res,next) => {
 
 router.get('/shopping-cart', (req,res,next) => {
 	if(!req.session.cart){
-		return res.render(path.join(__dirname, '/../views/cart'), { products: null });
+		return res.render(path.join(__dirname, '/../views/shop/cart'), { products: null });
 	}
 	let cart = new Cart(req.session.cart);
 	res.render(path.join(__dirname, '/../views/shop/cart'), { products: cart.generateArray(), totalPrice: cart.totalPrice });
@@ -114,9 +117,9 @@ router.post('/checkout', isLoggedIn, (req,res,next) => {
 	  	paymentId: charge.id
 	  });
 	  order.save((err, result) => {
-	  	 req.flash('success', 'Successfully purchased item');
-		  req.session.cart = null;
-		  res.redirect('/');
+	  		req.flash('success', 'Successfully purchased item');
+		  	req.session.cart = null;
+		  	res.redirect('/');
 	  });
 	});
 });
