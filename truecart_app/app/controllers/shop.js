@@ -9,8 +9,9 @@ let csrfProtection = csrf();
 
 module.exports = (app) => {
 	app.use('/', router);
-	app.use(csrfProtection);
 }
+
+router.use(csrfProtection);
 
 router.get('/', (req,res,next) => {
 
