@@ -13,10 +13,21 @@ module.exports = (app) => {
 	app.use('/', router);
 }
 
-router.use(csrfProtection);
+router.get('/user/profile', isLoggedIn, (req,res,next) => {
 
-router.get('/user/profile', (req,res,next) => {
-	res.render(path.join( __dirname, '/../views/profile'));
+	// get all orders
+	Order.find({user: req.user}, (err, orders) => {
+		if(err){
+			return res.write('Error!');
+		}
+		let cart;
+		orders.forEach(order => {
+			cart = new Cart(order.cart);
+			order.items = cart.generateArray();
+		});
+		res.render(path.join( __dirname, '/../views/user/profile'), { orders: orders });
+	});
+	
 });
 
 router.get('/user/logout', (req,res,next) => {
@@ -39,7 +50,7 @@ router.get('/', (req,res,next) => {
 		for(let i=0;i<products.length;i+=chunkSize){
 			productChunks.push(products.slice(i, i+chunkSize));
 		}
-		res.render(path.join( __dirname, '/../views/index'), { title: 'TrueCart', products: productChunks, successMsg: successMsg, noMessages: !successMsg });
+		res.render(path.join( __dirname, '/../views/shop/index'), { title: 'TrueCart', products: productChunks, successMsg: successMsg, noMessages: !successMsg });
 	});
 
 });
@@ -65,7 +76,7 @@ router.get('/shopping-cart', (req,res,next) => {
 		return res.render(path.join(__dirname, '/../views/cart'), { products: null });
 	}
 	let cart = new Cart(req.session.cart);
-	res.render(path.join(__dirname, '/../views/cart'), { products: cart.generateArray(), totalPrice: cart.totalPrice });
+	res.render(path.join(__dirname, '/../views/shop/cart'), { products: cart.generateArray(), totalPrice: cart.totalPrice });
 });
 
 router.get('/checkout', isLoggedIn, (req,res,next) => {
@@ -74,7 +85,7 @@ router.get('/checkout', isLoggedIn, (req,res,next) => {
 	}
 	let cart = new Cart(req.session.cart);
 	let errMsg = req.flash('error')[0];
-	res.render(path.join( __dirname, '/../views/checkout'), { total: cart.totalPrice, errMsg: errMsg, noError: !errMsg })
+	res.render(path.join( __dirname, '/../views/shop/checkout'), { total: cart.totalPrice, errMsg: errMsg, noError: !errMsg })
 });
 
 router.post('/checkout', isLoggedIn, (req,res,next) => {
@@ -110,33 +121,50 @@ router.post('/checkout', isLoggedIn, (req,res,next) => {
 	});
 });
 
+router.use(csrfProtection);
+
 router.get('/user/signup', (req,res,next) => {
 	let messages = req.flash('error');
-	res.render(path.join( __dirname, '/../views/signup'), { csrfToken: req.csrfToken(), messages: messages, hasErrors: messages.length > 0 });
+	res.render(path.join( __dirname, '/../views/user/signup'), { csrfToken: req.csrfToken(), messages: messages, hasErrors: messages.length > 0 });
 });
 
 router.post('/user/signup', passport.authenticate('local.signup', {
-	successRedirect: '/user/profile',
-	failureRedirect: '/user/signup',
-	failureFlash: true
-}));
+    failureRedirect: '/user/signup',
+    failureFlash: true
+}), function (req, res, next) {
+    if (req.session.oldUrl) {
+        var oldUrl = req.session.oldUrl;
+        req.session.oldUrl = null;
+        res.redirect(oldUrl);
+    } else {
+        res.redirect('/user/profile');
+    }
+});
 
 router.get('/user/signin', (req,res,next) => {
 	let messages = req.flash('error');
-	res.render(path.join( __dirname, '/../views/signin'), { csrfToken: req.csrfToken(), messages: messages, hasErrors: messages.length > 0 });
+	res.render(path.join( __dirname, '/../views/user/signin'), { csrfToken: req.csrfToken(), messages: messages, hasErrors: messages.length > 0 });
 });
 
 router.post('/user/signin', passport.authenticate('local.signin', {
-	successRedirect: '/user/profile',
-	failureRedirect: '/user/signin',
-	failureFlash: true
-}));
+    failureRedirect: '/user/signin',
+    failureFlash: true
+}), function (req, res, next) {
+    if (req.session.oldUrl) {
+        var oldUrl = req.session.oldUrl;
+        req.session.oldUrl = null;
+        res.redirect(oldUrl);
+    } else {
+        res.redirect('/user/profile');
+    }
+});
 
 function isLoggedIn(req,res,next){
 	if(req.isAuthenticated()){
 		return next();
 	}
-	res.redirect('/');
+	req.session.oldUrl = req.url;
+	res.redirect('/user/signin');
 }
 
 function notLoggedIn(req,res,next){
