@@ -13,14 +13,22 @@ module.exports = (app) => {
 
 router.use(csrfProtection);
 
+router.get('/user/profile', isLoggedIn, (req,res,next) => {
+	res.render(path.join( __dirname, '/../views/profile'));
+});
+
+router.get('/user/logout', isLoggedIn, (req,res,next) => {
+	req.logout();
+	res.redirect('/');
+});
+
+router.use('/', notLoggedIn, function(req,res,next){
+	next();
+});
+
 router.get('/', (req,res,next) => {
 
 	let Product = mongoose.model('Product');
-	let User = mongoose.model('User');
-	User.find({}, (err, user) => {
-		if(err) throw err;
-		console.log(user);
-	});
 
 	Product.find({}, (err, products) => {
 		if(err) throw err;
@@ -56,6 +64,16 @@ router.post('/user/signin', passport.authenticate('local.signin', {
 	failureFlash: true
 }));
 
-router.get('/user/profile', (req,res,next) => {
-	res.render(path.join( __dirname, '/../views/profile'));
-});
+function isLoggedIn(req,res,next){
+	if(req.isAuthenticated()){
+		return next();
+	}
+	res.redirect('/');
+}
+
+function notLoggedIn(req,res,next){
+	if(!req.isAuthenticated()){
+		return next();
+	}
+	res.redirect('/');
+}

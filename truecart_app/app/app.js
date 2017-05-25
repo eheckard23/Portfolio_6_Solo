@@ -23,6 +23,11 @@ module.exports = (app) => {
 	app.use(passport.initialize());
 	app.use(passport.session());
 
+	app.use((req,res,next) => {
+		res.locals.login = req.isAuthenticated();
+		next();
+	});
+
 	// setup models
 	let models = glob.sync( __dirname + '/models/*.js');
 	models.forEach(controller => {
