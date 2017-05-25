@@ -2,10 +2,12 @@ let glob = require('glob');
 let bodyParser = require('body-parser');
 let expressHbs = require('express-handlebars');
 let db = require('./db');
+let mongoose = require('mongoose');
 let session = require('express-session');
 let passport = require('passport');
 let flash = require('connect-flash');
 let validator = require('express-validator');
+let MongoStore = require('connect-mongo')(session);
 
 module.exports = (app) => {
 
@@ -18,13 +20,20 @@ module.exports = (app) => {
 	app.use(bodyParser.json());
 	app.use(bodyParser.urlencoded({ extended: true }));
 	app.use(validator());
-	app.use(session({secret: 'truecartsecret', resave: false, saveUninitialized: false }));
+	app.use(session({
+		secret: 'truecartsecret', 
+		resave: false, 
+		saveUninitialized: false,
+		store: new MongoStore({ mongooseConnection: mongoose.connection }),
+		cookie: { maxAge: 180 * 60 * 1000 } 
+	}));
 	app.use(flash());
 	app.use(passport.initialize());
 	app.use(passport.session());
 
 	app.use((req,res,next) => {
 		res.locals.login = req.isAuthenticated();
+		res.locals.session = req.session;
 		next();
 	});
 
