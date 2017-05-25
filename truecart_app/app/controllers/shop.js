@@ -25,7 +25,7 @@ router.get('/user/profile', isLoggedIn, (req,res,next) => {
 			cart = new Cart(order.cart);
 			order.items = cart.generateArray();
 		});
-		res.render(path.join( __dirname, '/../views/user/profile'), { orders: orders });
+		res.render(path.join( __dirname, '/../views/user/profile'), { orders: orders, user: req.user });
 	});
 	
 });
