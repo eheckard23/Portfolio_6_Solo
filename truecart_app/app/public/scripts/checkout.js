@@ -24,7 +24,7 @@ function stripeResponseHandler(status, response) {
         $form.find('button').prop('disabled', false); // Re-enable submission
 
     } else { // Token was created!
-
+    	console.log(response.id);
         // Get the token ID:
         var token = response.id;
 

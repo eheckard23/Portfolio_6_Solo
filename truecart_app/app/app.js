@@ -32,6 +32,7 @@ module.exports = (app) => {
 	app.use(flash());
 	app.use(passport.initialize());
 	app.use(passport.session());
+	console.log(path.join(__dirname, 'public'));
 	app.use(express.static(path.join(__dirname, 'public')));
 
 	app.use((req,res,next) => {
