@@ -4,6 +4,7 @@ let path = require('path');
 let mongoose = require('mongoose');
 let passport = require('passport');
 let csrf = require('csurf');
+let Cart = require('../models/cart');
 
 let csrfProtection = csrf();
 
@@ -40,6 +41,30 @@ router.get('/', (req,res,next) => {
 		res.render(path.join( __dirname, '/../views/index'), { title: 'TrueCart', products: productChunks });
 	});
 
+});
+
+router.get('/add-to-cart/:id', (req,res,next) => {
+	let Product = mongoose.model('Product');
+	// push item to cart
+	let productId = req.params.id;
+	let cart = new Cart(req.session.cart ? req.session.cart : {});
+
+	Product.findById(productId, (err, product) => {
+		if(err){
+			return res.redirect('/');
+		}
+		cart.add(product, product.id);
+		req.session.cart = cart;
+		res.redirect('/');
+	});
+});
+
+router.get('/shopping-cart', (req,res,next) => {
+	if(!req.session.cart){
+		return res.render(path.join(__dirname, '/../views/cart'), { products: null });
+	}
+	let cart = new Cart(req.session.cart);
+	res.render(path.join(__dirname, '/../views/cart'), { products: cart.generateArray(), totalPrice: cart.totalPrice });
 });
 
 router.get('/user/signup', (req,res,next) => {
