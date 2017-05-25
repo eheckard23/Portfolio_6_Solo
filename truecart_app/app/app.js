@@ -5,6 +5,7 @@ let db = require('./db');
 let session = require('express-session');
 let passport = require('passport');
 let flash = require('connect-flash');
+let validator = require('express-validator');
 
 module.exports = (app) => {
 
@@ -16,6 +17,7 @@ module.exports = (app) => {
 	// middleware
 	app.use(bodyParser.json());
 	app.use(bodyParser.urlencoded({ extended: true }));
+	app.use(validator());
 	app.use(session({secret: 'truecartsecret', resave: false, saveUninitialized: false }));
 	app.use(flash());
 	app.use(passport.initialize());
